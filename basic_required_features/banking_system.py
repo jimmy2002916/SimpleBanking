@@ -89,3 +89,37 @@ class BankingSystem:
             return False
         
         return account.withdraw(amount)
+    
+    def transfer(self, from_account_id, to_account_id, amount):
+        """
+        Transfer money between accounts.
+        
+        Args:
+            from_account_id (str): ID of the source account
+            to_account_id (str): ID of the destination account
+            amount (Decimal): Amount to transfer
+            
+        Returns:
+            bool: True if transfer was successful, False otherwise
+        """
+        # Check if amount is positive
+        if amount <= Decimal("0.00"):
+            return False
+        
+        # Get the accounts
+        from_account = self.get_account(from_account_id)
+        to_account = self.get_account(to_account_id)
+        
+        # Check if both accounts exist
+        if not from_account or not to_account:
+            return False
+        
+        # Check if the source account has enough balance
+        if from_account.balance < amount:
+            return False
+        
+        # Perform the transfer
+        from_account.balance -= amount
+        to_account.balance += amount
+        
+        return True
