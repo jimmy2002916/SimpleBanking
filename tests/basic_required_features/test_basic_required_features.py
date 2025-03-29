@@ -8,7 +8,7 @@ from decimal import Decimal
 class TestBankingSystem(unittest.TestCase):
     """Test cases for the Simple Banking System."""
     
-    # Feature: Users can create a new bank account with a name and starting balance
+    # Feature 1: Users can create a new bank account with a name and starting balance
     def test_create_account(self):
         """Test creating a new bank account."""
         from banking import BankAccount, BankingSystem
@@ -28,12 +28,9 @@ class TestBankingSystem(unittest.TestCase):
         with self.assertRaises(ValueError):
             banking.create_account("Invalid User", Decimal("-100.00"))
     
-    # Features: 
-    # - Users can deposit money to their accounts
-    # - Users can withdraw money from their accounts
-    # - Users are not allowed to overdraft their accounts
-    def test_deposit_withdraw(self):
-        """Test depositing and withdrawing money."""
+    # Feature 2: Users can deposit money to their accounts
+    def test_deposit(self):
+        """Test depositing money into an account."""
         from banking import BankAccount, BankingSystem
         
         # Create a banking system with an account
@@ -47,18 +44,69 @@ class TestBankingSystem(unittest.TestCase):
         
         # Test invalid deposit (negative amount)
         self.assertFalse(banking.deposit(account_id, Decimal("-100.00")))
+        account = banking.get_account(account_id)
+        self.assertEqual(account.balance, Decimal("1500.00"))  # Balance should remain unchanged
+        
+        # Test invalid deposit (zero amount)
+        self.assertFalse(banking.deposit(account_id, Decimal("0.00")))
+        account = banking.get_account(account_id)
+        self.assertEqual(account.balance, Decimal("1500.00"))  # Balance should remain unchanged
+        
+        # Test deposit to non-existent account
+        self.assertFalse(banking.deposit("INVALID_ID", Decimal("500.00")))
+    
+    # Feature 3: Users can withdraw money from their accounts
+    def test_withdraw(self):
+        """Test withdrawing money from an account."""
+        from banking import BankAccount, BankingSystem
+        
+        # Create a banking system with an account
+        banking = BankingSystem()
+        account_id = banking.create_account("John Doe", Decimal("1000.00"))
         
         # Test valid withdrawal
         self.assertTrue(banking.withdraw(account_id, Decimal("300.00")))
         account = banking.get_account(account_id)
-        self.assertEqual(account.balance, Decimal("1200.00"))
+        self.assertEqual(account.balance, Decimal("700.00"))
         
-        # Test overdraft protection (withdrawal amount > balance)
-        self.assertFalse(banking.withdraw(account_id, Decimal("2000.00")))
+        # Test invalid withdrawal (negative amount)
+        self.assertFalse(banking.withdraw(account_id, Decimal("-100.00")))
         account = banking.get_account(account_id)
-        self.assertEqual(account.balance, Decimal("1200.00"))
+        self.assertEqual(account.balance, Decimal("700.00"))  # Balance should remain unchanged
+        
+        # Test invalid withdrawal (zero amount)
+        self.assertFalse(banking.withdraw(account_id, Decimal("0.00")))
+        account = banking.get_account(account_id)
+        self.assertEqual(account.balance, Decimal("700.00"))  # Balance should remain unchanged
+        
+        # Test withdrawal from non-existent account
+        self.assertFalse(banking.withdraw("INVALID_ID", Decimal("100.00")))
     
-    # Feature: Users can transfer money to other accounts in the same banking system
+    # Feature 4: Users are not allowed to overdraft their accounts
+    def test_overdraft_protection(self):
+        """Test that users cannot overdraft their accounts."""
+        from banking import BankAccount, BankingSystem
+        
+        # Create a banking system with an account
+        banking = BankingSystem()
+        account_id = banking.create_account("John Doe", Decimal("500.00"))
+        
+        # Test withdrawal that would cause overdraft
+        self.assertFalse(banking.withdraw(account_id, Decimal("600.00")))
+        account = banking.get_account(account_id)
+        self.assertEqual(account.balance, Decimal("500.00"))  # Balance should remain unchanged
+        
+        # Test withdrawal of exact balance (should succeed)
+        self.assertTrue(banking.withdraw(account_id, Decimal("500.00")))
+        account = banking.get_account(account_id)
+        self.assertEqual(account.balance, Decimal("0.00"))
+        
+        # Test withdrawal from empty account
+        self.assertFalse(banking.withdraw(account_id, Decimal("0.01")))
+        account = banking.get_account(account_id)
+        self.assertEqual(account.balance, Decimal("0.00"))  # Balance should remain unchanged
+    
+    # Feature 5: Users can transfer money to other accounts in the same banking system
     def test_transfer(self):
         """Test transferring money between accounts."""
         from banking import BankAccount, BankingSystem
@@ -80,7 +128,7 @@ class TestBankingSystem(unittest.TestCase):
         # Test transfer with insufficient funds (overdraft protection)
         self.assertFalse(banking.transfer(account1_id, account2_id, Decimal("800.00")))
     
-    # Feature: Save and load system state to CSV
+    # Feature 6: Save and load system state to CSV
     def test_save_load_csv(self):
         """Test saving and loading the system state to/from CSV."""
         from banking import BankAccount, BankingSystem
