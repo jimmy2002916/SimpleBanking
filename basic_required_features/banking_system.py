@@ -5,6 +5,8 @@ This module defines the BankingSystem class which manages bank accounts
 and provides operations like creating accounts, deposits, withdrawals, and transfers.
 """
 from decimal import Decimal
+import csv
+import os
 from .account import BankAccount
 
 class BankingSystem:
@@ -123,3 +125,86 @@ class BankingSystem:
         to_account.balance += amount
         
         return True
+    
+    def save_to_csv(self, filepath):
+        """
+        Save the banking system state to a CSV file.
+        
+        Args:
+            filepath (str): Path to the CSV file
+            
+        Returns:
+            bool: True if save was successful, False otherwise
+        """
+        try:
+            # Create directory if it doesn't exist
+            directory = os.path.dirname(filepath)
+            if directory and not os.path.exists(directory):
+                os.makedirs(directory, exist_ok=True)
+            
+            with open(filepath, 'w', newline='') as csvfile:
+                # Create CSV writer
+                writer = csv.writer(csvfile)
+                
+                # Write header row
+                writer.writerow(['account_id', 'name', 'balance', 'next_account_id'])
+                
+                # Write system state (next_account_id)
+                writer.writerow(['SYSTEM', '', '', self.next_account_id])
+                
+                # Write account data
+                for account_id, account in self.accounts.items():
+                    writer.writerow([
+                        account.account_id,
+                        account.name,
+                        str(account.balance)
+                    ])
+            
+            return True
+        except Exception as e:
+            print(f"Error saving to CSV: {e}")
+            return False
+    
+    def load_from_csv(self, filepath):
+        """
+        Load the banking system state from a CSV file.
+        
+        Args:
+            filepath (str): Path to the CSV file
+            
+        Returns:
+            bool: True if load was successful, False otherwise
+        """
+        try:
+            # Check if file exists
+            if not os.path.exists(filepath):
+                return False
+            
+            # Clear current state
+            self.accounts = {}
+            
+            with open(filepath, 'r', newline='') as csvfile:
+                # Create CSV reader
+                reader = csv.reader(csvfile)
+                
+                # Skip header row
+                next(reader)
+                
+                # Process rows
+                for row in reader:
+                    if row[0] == 'SYSTEM':
+                        # System state row
+                        self.next_account_id = int(row[3])
+                    else:
+                        # Account row
+                        account_id = row[0]
+                        name = row[1]
+                        balance = Decimal(row[2])
+                        
+                        # Create account object directly (bypass create_account to preserve IDs)
+                        self.accounts[account_id] = BankAccount(account_id, name, balance)
+            
+            return True
+        except Exception as e:
+            print(f"Error loading from CSV: {e}")
+            return False
