@@ -19,6 +19,16 @@ class BankingSystem:
         """
         self.accounts = {}
         self.next_account_id = 1
+        self.logger = None
+    
+    def attach_logger(self, logger):
+        """
+        Attach a transaction logger to the banking system.
+        
+        Args:
+            logger: A transaction logger object
+        """
+        self.logger = logger
     
     def create_account(self, name, initial_balance=Decimal("0.00")):
         """
@@ -44,6 +54,17 @@ class BankingSystem:
         
         # Create and store the account
         self.accounts[account_id] = BankAccount(account_id, name, initial_balance)
+        
+        # Log the account creation if logger is attached
+        if self.logger:
+            self.logger.log_transaction({
+                "action": "create_account",
+                "account_id": account_id,
+                "name": name,
+                "initial_balance": initial_balance,
+                "status": "success"
+            })
+        
         return account_id
     
     def get_account(self, account_id):
@@ -71,9 +92,21 @@ class BankingSystem:
         """
         account = self.get_account(account_id)
         if not account:
+            # Log failed deposit if logger is attached
+            if self.logger:
+                self.logger.log_deposit(account_id, amount, "failed", "Account not found")
             return False
         
-        return account.deposit(amount)
+        result = account.deposit(amount)
+        
+        # Log the deposit if logger is attached
+        if self.logger:
+            if result:
+                self.logger.log_deposit(account_id, amount, "success")
+            else:
+                self.logger.log_deposit(account_id, amount, "failed", "Invalid amount")
+        
+        return result
     
     def withdraw(self, account_id, amount):
         """
@@ -88,9 +121,30 @@ class BankingSystem:
         """
         account = self.get_account(account_id)
         if not account:
+            # Log failed withdrawal if logger is attached
+            if self.logger:
+                self.logger.log_withdraw(account_id, amount, "failed", "Account not found")
             return False
         
-        return account.withdraw(amount)
+        # Check if amount is positive
+        if amount <= Decimal("0.00"):
+            if self.logger:
+                self.logger.log_withdraw(account_id, amount, "failed", "Invalid amount")
+            return False
+        
+        # Check if there's enough balance
+        if amount > account.balance:
+            if self.logger:
+                self.logger.log_withdraw(account_id, amount, "failed", "Insufficient funds")
+            return False
+        
+        result = account.withdraw(amount)
+        
+        # Log the withdrawal if logger is attached
+        if self.logger and result:
+            self.logger.log_withdraw(account_id, amount, "success")
+        
+        return result
     
     def transfer(self, from_account_id, to_account_id, amount):
         """
@@ -106,6 +160,8 @@ class BankingSystem:
         """
         # Check if amount is positive
         if amount <= Decimal("0.00"):
+            if self.logger:
+                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", "Invalid amount")
             return False
         
         # Get the accounts
@@ -114,15 +170,23 @@ class BankingSystem:
         
         # Check if both accounts exist
         if not from_account or not to_account:
+            if self.logger:
+                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", "Account not found")
             return False
         
         # Check if the source account has enough balance
         if from_account.balance < amount:
+            if self.logger:
+                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", "Insufficient funds")
             return False
         
         # Perform the transfer
         from_account.balance -= amount
         to_account.balance += amount
+        
+        # Log the transfer if logger is attached
+        if self.logger:
+            self.logger.log_transfer(from_account_id, to_account_id, amount, "success")
         
         return True
     
@@ -160,8 +224,24 @@ class BankingSystem:
                         str(account.balance)
                     ])
             
+            # Log the save operation if logger is attached
+            if self.logger:
+                self.logger.log_transaction({
+                    "action": "save_to_csv",
+                    "filepath": filepath,
+                    "status": "success"
+                })
+            
             return True
         except Exception as e:
+            # Log the failed save operation if logger is attached
+            if self.logger:
+                self.logger.log_transaction({
+                    "action": "save_to_csv",
+                    "filepath": filepath,
+                    "status": "failed",
+                    "reason": str(e)
+                })
             print(f"Error saving to CSV: {e}")
             return False
     
@@ -178,6 +258,13 @@ class BankingSystem:
         try:
             # Check if file exists
             if not os.path.exists(filepath):
+                if self.logger:
+                    self.logger.log_transaction({
+                        "action": "load_from_csv",
+                        "filepath": filepath,
+                        "status": "failed",
+                        "reason": "File not found"
+                    })
                 return False
             
             # Clear current state
@@ -204,7 +291,23 @@ class BankingSystem:
                         # Create account object directly (bypass create_account to preserve IDs)
                         self.accounts[account_id] = BankAccount(account_id, name, balance)
             
+            # Log the load operation if logger is attached
+            if self.logger:
+                self.logger.log_transaction({
+                    "action": "load_from_csv",
+                    "filepath": filepath,
+                    "status": "success"
+                })
+            
             return True
         except Exception as e:
+            # Log the failed load operation if logger is attached
+            if self.logger:
+                self.logger.log_transaction({
+                    "action": "load_from_csv",
+                    "filepath": filepath,
+                    "status": "failed",
+                    "reason": str(e)
+                })
             print(f"Error loading from CSV: {e}")
             return False
