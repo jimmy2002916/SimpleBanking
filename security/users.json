@@ -1,0 +1,11 @@
+[
+  {
+    "user_id": "USRFB039721",
+    "username": "admin",
+    "password_hash": "47bbeee24a4bab1e88c91b0285325378779d3b6e1a601022ac01ab0b29b56dc6",
+    "salt": "5d1c027fa4aeff2ec83eeedebfb0c53b35df1904e740780e2d9f6753d4f01c46",
+    "role": "admin",
+    "created_at": "2025-03-30T22:34:57.302889",
+    "last_login": null
+  }
+]

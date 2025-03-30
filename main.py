@@ -7,8 +7,13 @@ This script provides a simple command-line interface to interact with the bankin
 
 import sys
 import os
+import argparse
 from decimal import Decimal
-from banking import BankingSystem, TransactionLogger
+
+# Update imports to use the correct paths
+from basic_required_features.banking_system import BankingSystem
+from advanced_features.logging.transaction_logger import TransactionLogger
+from advanced_features.storage.storage_factory import StorageFactory
 
 
 def print_menu():
@@ -35,10 +40,52 @@ def get_decimal_input(prompt):
             print("Please enter a valid number.")
 
 
+def parse_arguments():
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(description="Simple Banking System")
+    
+    # Add storage type argument
+    parser.add_argument("-DStorage", 
+                        choices=["csv", "sqlite"], 
+                        default="csv",
+                        help="Storage mechanism to use (csv or sqlite)")
+    
+    # Add storage path arguments
+    parser.add_argument("-DStoragePath", 
+                        help="Path for the storage file/database")
+    
+    return parser.parse_args()
+
+
 def main():
     """Main function to run the banking system."""
-    # Initialize the banking system
-    banking = BankingSystem()
+    # Parse command-line arguments
+    args = parse_arguments()
+    
+    # Initialize the storage system based on command-line arguments
+    storage_type = args.DStorage
+    storage_path = args.DStoragePath
+    
+    # Set default paths if not provided
+    if not storage_path:
+        if storage_type == "csv":
+            storage_path = "banking_data.csv"
+        else:  # sqlite
+            storage_path = "banking.db"
+    
+    print(f"Using {storage_type.upper()} storage at: {storage_path}")
+    
+    # Create the appropriate storage
+    storage_kwargs = {}
+    if storage_type == "csv":
+        storage_kwargs["filepath"] = storage_path
+    else:  # sqlite
+        storage_kwargs["db_path"] = storage_path
+    
+    storage = StorageFactory.create_storage(storage_type, **storage_kwargs)
+    
+    # Initialize the banking system with the selected storage
+    banking = BankingSystem(storage)
     
     # Set up transaction logging
     log_dir = "logs"
@@ -118,19 +165,19 @@ def main():
                 
         elif choice == '6':
             # Save system state
-            filepath = input("Enter filepath to save (e.g., banking_data.csv): ")
+            print("Saving system state...")
             
-            if banking.save_to_csv(filepath):
-                print(f"System state saved to {filepath}")
+            if banking.save_to_storage():
+                print(f"System state saved successfully")
             else:
                 print("Failed to save system state.")
                 
         elif choice == '7':
             # Load system state
-            filepath = input("Enter filepath to load from: ")
+            print("Loading system state...")
             
-            if banking.load_from_csv(filepath):
-                print(f"System state loaded from {filepath}")
+            if banking._load_from_storage():
+                print(f"System state loaded successfully")
             else:
                 print("Failed to load system state.")
                 
@@ -207,6 +254,11 @@ def main():
                 
         elif choice == '9':
             # Exit
+            print("Saving system state before exit...")
+            if banking.save_to_storage():
+                print("System state saved successfully.")
+            else:
+                print("Warning: Failed to save system state.")
             print("Thank you for using Simple Banking System. Goodbye!")
             sys.exit(0)
             

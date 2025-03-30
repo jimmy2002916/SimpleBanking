@@ -144,9 +144,13 @@ This project follows Test-Driven Development (TDD):
 
 ### Advanced Features
 - [Transaction Logging](docs/transaction_logging.md) - Comprehensive audit trails for all banking operations
+- [Database Storage](docs/database_storage.md) - SQLite implementation for account data
 - Security features (planned)
 - Analytics capabilities (planned)
-- Alternative storage options (planned)
+
+## Database Storage
+
+The system now supports SQLite database storage for account information. For detailed documentation, see [Database Storage](docs/database_storage.md).
 
 ## Getting Started
 

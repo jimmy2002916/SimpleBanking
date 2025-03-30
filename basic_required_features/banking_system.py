@@ -7,19 +7,33 @@ and provides operations like creating accounts, deposits, withdrawals, and trans
 from decimal import Decimal
 import csv
 import os
+from typing import Optional, Dict, Any, Union
+
 from .account import BankAccount
+from .storage_interface import IStorage
+from .csv_storage import CSVStorage
 
 class BankingSystem:
     """
     Manages bank accounts and provides system-wide operations.
     """
-    def __init__(self):
+    def __init__(self, storage: Optional[IStorage] = None):
         """
         Initialize a new banking system with an empty accounts dictionary.
+        
+        Args:
+            storage (Optional[IStorage]): Storage implementation to use
+                                         (defaults to CSV storage if None)
         """
         self.accounts = {}
         self.next_account_id = 1
         self.logger = None
+        
+        # Set up storage
+        self.storage = storage if storage is not None else CSVStorage()
+        
+        # Try to load existing accounts
+        self._load_from_storage()
     
     def attach_logger(self, logger):
         """
@@ -190,6 +204,89 @@ class BankingSystem:
         
         return True
     
+    def save_to_storage(self) -> bool:
+        """
+        Save the banking system state to the configured storage.
+        
+        Returns:
+            bool: True if save was successful, False otherwise
+        """
+        try:
+            result = self.storage.save_accounts(self.accounts, self.next_account_id)
+            
+            # Log the save operation if logger is attached
+            if self.logger:
+                self.logger.log_transaction({
+                    "action": "save_to_storage",
+                    "status": "success" if result else "failed"
+                })
+            
+            return result
+        except Exception as e:
+            # Log the failed save operation if logger is attached
+            if self.logger:
+                self.logger.log_transaction({
+                    "action": "save_to_storage",
+                    "status": "failed",
+                    "reason": str(e)
+                })
+            print(f"Error saving to storage: {e}")
+            return False
+    
+    def _load_from_storage(self) -> bool:
+        """
+        Load the banking system state from the configured storage.
+        
+        Returns:
+            bool: True if load was successful, False otherwise
+        """
+        try:
+            # Load accounts from storage
+            self.accounts = self.storage.load_accounts()
+            
+            # If using CSV storage, get the next_account_id
+            if hasattr(self.storage, 'get_next_account_id'):
+                self.next_account_id = self.storage.get_next_account_id()
+            else:
+                # For other storage types, determine next_account_id from accounts
+                self._determine_next_account_id()
+            
+            # Log the load operation if logger is attached
+            if self.logger:
+                self.logger.log_transaction({
+                    "action": "load_from_storage",
+                    "status": "success"
+                })
+            
+            return True
+        except Exception as e:
+            # Log the failed load operation if logger is attached
+            if self.logger:
+                self.logger.log_transaction({
+                    "action": "load_from_storage",
+                    "status": "failed",
+                    "reason": str(e)
+                })
+            print(f"Error loading from storage: {e}")
+            return False
+    
+    def _determine_next_account_id(self) -> None:
+        """
+        Determine the next account ID based on existing accounts.
+        """
+        max_id = 0
+        for account_id in self.accounts.keys():
+            if account_id.startswith("ACC"):
+                try:
+                    id_num = int(account_id[3:])
+                    max_id = max(max_id, id_num)
+                except ValueError:
+                    pass
+        
+        self.next_account_id = max_id + 1
+    
+    # Legacy methods below can be removed as they're now handled by the storage interface
+    # and StorageFactory. Keeping them would create duplicate code paths.
     def save_to_csv(self, filepath):
         """
         Save the banking system state to a CSV file.
@@ -200,51 +297,20 @@ class BankingSystem:
         Returns:
             bool: True if save was successful, False otherwise
         """
-        try:
-            # Create directory if it doesn't exist
-            directory = os.path.dirname(filepath)
-            if directory and not os.path.exists(directory):
-                os.makedirs(directory, exist_ok=True)
-            
-            with open(filepath, 'w', newline='') as csvfile:
-                # Create CSV writer
-                writer = csv.writer(csvfile)
-                
-                # Write header row
-                writer.writerow(['account_id', 'name', 'balance', 'next_account_id'])
-                
-                # Write system state (next_account_id)
-                writer.writerow(['SYSTEM', '', '', self.next_account_id])
-                
-                # Write account data
-                for account_id, account in self.accounts.items():
-                    writer.writerow([
-                        account.account_id,
-                        account.name,
-                        str(account.balance)
-                    ])
-            
-            # Log the save operation if logger is attached
-            if self.logger:
-                self.logger.log_transaction({
-                    "action": "save_to_csv",
-                    "filepath": filepath,
-                    "status": "success"
-                })
-            
-            return True
-        except Exception as e:
-            # Log the failed save operation if logger is attached
-            if self.logger:
-                self.logger.log_transaction({
-                    "action": "save_to_csv",
-                    "filepath": filepath,
-                    "status": "failed",
-                    "reason": str(e)
-                })
-            print(f"Error saving to CSV: {e}")
-            return False
+        csv_storage = CSVStorage(filepath)
+        result = csv_storage.save_accounts(self.accounts, self.next_account_id)
+        
+        # Log the save operation if logger is attached
+        if self.logger:
+            self.logger.log_transaction({
+                "action": "save_to_csv",
+                "filepath": filepath,
+                "status": "success" if result else "failed"
+            })
+        
+        return result
     
+    # For backward compatibility
     def load_from_csv(self, filepath):
         """
         Load the banking system state from a CSV file.
@@ -256,40 +322,9 @@ class BankingSystem:
             bool: True if load was successful, False otherwise
         """
         try:
-            # Check if file exists
-            if not os.path.exists(filepath):
-                if self.logger:
-                    self.logger.log_transaction({
-                        "action": "load_from_csv",
-                        "filepath": filepath,
-                        "status": "failed",
-                        "reason": "File not found"
-                    })
-                return False
-            
-            # Clear current state
-            self.accounts = {}
-            
-            with open(filepath, 'r', newline='') as csvfile:
-                # Create CSV reader
-                reader = csv.reader(csvfile)
-                
-                # Skip header row
-                next(reader)
-                
-                # Process rows
-                for row in reader:
-                    if row[0] == 'SYSTEM':
-                        # System state row
-                        self.next_account_id = int(row[3])
-                    else:
-                        # Account row
-                        account_id = row[0]
-                        name = row[1]
-                        balance = Decimal(row[2])
-                        
-                        # Create account object directly (bypass create_account to preserve IDs)
-                        self.accounts[account_id] = BankAccount(account_id, name, balance)
+            csv_storage = CSVStorage(filepath)
+            self.accounts = csv_storage.load_accounts()
+            self.next_account_id = csv_storage.get_next_account_id()
             
             # Log the load operation if logger is attached
             if self.logger:
