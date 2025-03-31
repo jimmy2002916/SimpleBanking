@@ -203,14 +203,85 @@ The `docs/` directory contains detailed documentation on various aspects of the 
 - **[Logging Scalability](docs/logging_scalability.md)**: How the logging system scales for big data applications
 - **[Database Storage](docs/database_storage.md)**: Details on the SQLite storage implementation
 
+## System Summary
+
+This banking system is designed to be simple, robust, and secure, supporting key functionalities such as account creation, balance checks, deposits, withdrawals, transfers, and transaction history.
+
+At the heart of the system is the principle of **transaction atomicity**. The `TransactionManager` class ensures that operations involving money are executed atomically through the following mechanisms:
+
+* A context manager (`atomic_transaction`) acquires locks on all involved accounts in a sorted order to avoid deadlocks
+* Account balances are backed up before any changes are made
+* If an exception occurs during the transaction, the system rolls back to the previous state
+
+The system supports **concurrent operations** through the `TransactionManager` which:
+* Uses thread locks (`threading.RLock`) to protect account access
+* Ensures no two operations can modify the same account simultaneously
+* Acquires locks in a consistent order to prevent deadlocks
+
+**Transaction logging** is implemented through the `TransactionLogger` class, which:
+* Records all banking operations (deposits, withdrawals, transfers)
+* Timestamps each transaction
+* Stores success/failure status and reason codes
+* Provides methods to retrieve transaction history by account or action type
+
+The system includes **input validation** for all operations:
+* Account names cannot be empty
+* Initial balances cannot be negative
+* Deposit and withdrawal amounts must be positive
+* Withdrawals cannot exceed available balance
+
+**Storage flexibility** is provided through:
+* An `IStorage` interface that abstracts storage operations
+* `CSVStorage` implementation for simple file-based storage
+* `SQLiteStorage` implementation for database storage
+* A `StorageFactory` to create the appropriate storage implementation
+
+**Account ID formatting** ensures consistency:
+* All account IDs follow the format ACC0001 (ACC followed by a 4-digit number)
+* The system properly handles both new and existing account IDs
+* The `_determine_next_account_id` method ensures unique IDs are assigned
+
+**Error handling** is robust throughout the system:
+* Transactions are rolled back on failure
+* Detailed error messages are provided
+* Failed operations are logged with reason codes
+
 ## Future Work
 
 The following enhancements are planned for future development:
 
-1. **User Authentication**: Implement secure login and user management
-2. **Web Interface**: Develop a web-based frontend using Flask or Django
-3. **Mobile App**: Develop mobile applications for iOS and Android
-4. **API Service**: Create a RESTful API for third-party integrations
-5. **Distributed Storage**: Support for distributed database systems
-6. **Notifications**: Email and SMS alerts for account activities
-7. **Backup and Recovery**: Advanced data backup and disaster recovery features
+1. **User Authentication and Security**:
+   * Implement secure user authentication
+   * Add password protection for account access
+   * Implement role-based access control
+
+2. **Enhanced Banking Features**:
+   * Support for different account types (savings, checking)
+   * Interest calculation for savings accounts
+   * Scheduled/recurring transactions
+   * Support for multiple currencies
+
+3. **Improved User Interface**:
+   * Develop a web-based frontend
+   * Create a mobile application
+   * Implement a more intuitive command-line interface
+
+4. **Advanced Storage and Performance**:
+   * Implement caching for frequently accessed data
+   * Add support for distributed database systems
+   * Optimize transaction processing for high-volume scenarios
+
+5. **Notification System**:
+   * Email alerts for significant account activities
+   * SMS notifications for transactions
+   * Customizable notification preferences
+
+6. **Reporting and Analytics**:
+   * Generate account statements and reports
+   * Provide transaction analytics and insights
+   * Export data in various formats (PDF, CSV, etc.)
+
+7. **System Resilience**:
+   * Implement advanced backup and recovery mechanisms
+   * Add comprehensive error monitoring
+   * Improve logging for better diagnostics and auditing
