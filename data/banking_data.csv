@@ -1,0 +1,4 @@
+account_id,name,balance,next_account_id
+SYSTEM,,,3
+ACC0001,jimmy,2500
+ACC0002,jamie,1000

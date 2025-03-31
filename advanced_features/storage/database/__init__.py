@@ -1,10 +1,12 @@
 """
-Database storage package for the Simple Banking System.
+Database module for the Simple Banking System.
 
-This package provides database storage implementations for the banking system.
+This module provides database-related functionality.
 """
 
+# Import main classes for easier access
 from .sqlite_storage import SQLiteStorage
-from .models import DatabaseManager
+from .database_manager import DatabaseManager
 
+# Public API
 __all__ = ['SQLiteStorage', 'DatabaseManager']

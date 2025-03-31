@@ -1,23 +1,15 @@
 #!/usr/bin/env python3
-"""
-Main entry point for the Simple Banking System.
-
-This script provides a simple command-line interface to interact with the banking system.
-"""
-
 import sys
 import os
 import argparse
 from decimal import Decimal
 
-# Update imports to use the correct paths
 from basic_required_features.banking_system import BankingSystem
 from advanced_features.logging.transaction_logger import TransactionLogger
 from advanced_features.storage.storage_factory import StorageFactory
 
 
 def print_menu():
-    """Print the main menu options."""
     print("\n===== Simple Banking System =====")
     print("1. Create a new account")
     print("2. Deposit money")
@@ -32,7 +24,6 @@ def print_menu():
 
 
 def get_decimal_input(prompt):
-    """Get a decimal input from the user."""
     while True:
         try:
             return Decimal(input(prompt))
@@ -40,42 +31,49 @@ def get_decimal_input(prompt):
             print("Please enter a valid number.")
 
 
+def get_account_id_input(prompt, banking=None):
+    example_text = ""
+    if banking and banking.accounts:
+        # Get up to 2 account IDs as examples
+        example_ids = list(banking.accounts.keys())[:2]
+        if example_ids:
+            example_text = f" (e.g., {', '.join(example_ids)})"
+    
+    return input(f"{prompt}{example_text}: ")
+
+
 def parse_arguments():
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Simple Banking System")
     
-    # Add storage type argument
-    parser.add_argument("-DStorage", 
+    parser.add_argument("-DStorage",
                         choices=["csv", "sqlite"], 
                         default="csv",
                         help="Storage mechanism to use (csv or sqlite)")
     
-    # Add storage path arguments
-    parser.add_argument("-DStoragePath", 
+    parser.add_argument("-DStoragePath",
                         help="Path for the storage file/database")
     
     return parser.parse_args()
 
 
 def main():
-    """Main function to run the banking system."""
-    # Parse command-line arguments
     args = parse_arguments()
     
-    # Initialize the storage system based on command-line arguments
     storage_type = args.DStorage
     storage_path = args.DStoragePath
     
-    # Set default paths if not provided
+    data_dir = "data"
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+    
     if not storage_path:
         if storage_type == "csv":
-            storage_path = "banking_data.csv"
+            storage_path = os.path.join(data_dir, "banking_data.csv")
         else:  # sqlite
-            storage_path = "banking.db"
+            storage_path = os.path.join(data_dir, "banking.db")
     
     print(f"Using {storage_type.upper()} storage at: {storage_path}")
     
-    # Create the appropriate storage
     storage_kwargs = {}
     if storage_type == "csv":
         storage_kwargs["filepath"] = storage_path
@@ -84,10 +82,8 @@ def main():
     
     storage = StorageFactory.create_storage(storage_type, **storage_kwargs)
     
-    # Initialize the banking system with the selected storage
     banking = BankingSystem(storage)
     
-    # Set up transaction logging
     log_dir = "logs"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -114,7 +110,7 @@ def main():
                 
         elif choice == '2':
             # Deposit money
-            account_id = input("Enter account ID: ")
+            account_id = get_account_id_input("Enter account ID", banking)
             amount = get_decimal_input("Enter amount to deposit: ")
             
             if banking.deposit(account_id, amount):
@@ -126,7 +122,7 @@ def main():
                 
         elif choice == '3':
             # Withdraw money
-            account_id = input("Enter account ID: ")
+            account_id = get_account_id_input("Enter account ID", banking)
             amount = get_decimal_input("Enter amount to withdraw: ")
             
             if banking.withdraw(account_id, amount):
@@ -138,134 +134,65 @@ def main():
                 
         elif choice == '4':
             # Transfer money
-            from_account_id = input("Enter source account ID: ")
-            to_account_id = input("Enter destination account ID: ")
+            from_account_id = get_account_id_input("Enter source account ID", banking)
+            to_account_id = get_account_id_input("Enter destination account ID", banking)
             amount = get_decimal_input("Enter amount to transfer: ")
             
             if banking.transfer(from_account_id, to_account_id, amount):
                 print("Transfer successful!")
                 from_account = banking.get_account(from_account_id)
                 to_account = banking.get_account(to_account_id)
-                print(f"Source account balance: {from_account.balance}")
-                print(f"Destination account balance: {to_account.balance}")
+                print(f"New balance for {from_account_id}: {from_account.balance}")
+                print(f"New balance for {to_account_id}: {to_account.balance}")
             else:
                 print("Transfer failed. Please check account IDs, amount, and balance.")
                 
         elif choice == '5':
             # View account details
-            account_id = input("Enter account ID: ")
+            account_id = get_account_id_input("Enter account ID", banking)
             account = banking.get_account(account_id)
             
             if account:
-                print(f"\nAccount ID: {account.account_id}")
-                print(f"Name: {account.name}")
+                print(f"\nAccount ID: {account_id}")
+                print(f"Account Holder: {account.name}")
                 print(f"Balance: {account.balance}")
             else:
-                print("Account not found.")
+                print(f"Account {account_id} not found.")
                 
         elif choice == '6':
             # Save system state
-            print("Saving system state...")
+            banking.save_to_storage()
+            print("System state saved successfully.")
             
-            if banking.save_to_storage():
-                print(f"System state saved successfully")
-            else:
-                print("Failed to save system state.")
-                
         elif choice == '7':
             # Load system state
-            print("Loading system state...")
+            banking.load_from_storage()
+            print("System state loaded successfully.")
             
-            if banking._load_from_storage():
-                print(f"System state loaded successfully")
-            else:
-                print("Failed to load system state.")
-                
         elif choice == '8':
             # View transaction logs
             print("\n===== Transaction Logs =====")
-            print("1. View all logs")
-            print("2. View logs for a specific account")
-            print("3. View logs by action type")
-            print("4. Back to main menu")
+            account_filter = input("Filter by account ID (leave empty for all): ")
             
-            log_choice = input("Enter your choice (1-4): ")
-            
-            if log_choice == '1':
-                # View all logs
-                logs = logger.get_all_logs()
-                if logs:
-                    print("\nAll Transaction Logs:")
-                    for i, log in enumerate(logs, 1):
-                        print(f"\nLog #{i}:")
-                        for key, value in log.items():
-                            print(f"  {key}: {value}")
-                else:
-                    print("No transaction logs found.")
-                    
-            elif log_choice == '2':
-                # View logs for a specific account
-                account_id = input("Enter account ID: ")
-                logs = logger.get_logs_by_account(account_id)
-                
-                if logs:
-                    print(f"\nTransaction Logs for Account {account_id}:")
-                    for i, log in enumerate(logs, 1):
-                        print(f"\nLog #{i}:")
-                        for key, value in log.items():
-                            print(f"  {key}: {value}")
-                else:
-                    print(f"No transaction logs found for account {account_id}.")
-                    
-            elif log_choice == '3':
-                # View logs by action type
-                print("\nAction Types:")
-                print("1. deposit")
-                print("2. withdraw")
-                print("3. transfer")
-                print("4. create_account")
-                print("5. save_to_csv")
-                print("6. load_from_csv")
-                
-                action_choice = input("Enter action type (1-6): ")
-                action_types = ["deposit", "withdraw", "transfer", "create_account", "save_to_csv", "load_from_csv"]
-                
-                if action_choice.isdigit() and 1 <= int(action_choice) <= 6:
-                    action = action_types[int(action_choice) - 1]
-                    logs = logger.get_logs_by_action(action)
-                    
-                    if logs:
-                        print(f"\nTransaction Logs for Action '{action}':")
-                        for i, log in enumerate(logs, 1):
-                            print(f"\nLog #{i}:")
-                            for key, value in log.items():
-                                print(f"  {key}: {value}")
-                    else:
-                        print(f"No transaction logs found for action '{action}'.")
-                else:
-                    print("Invalid action type.")
-                    
-            elif log_choice == '4':
-                # Back to main menu
-                continue
-                
+            if account_filter:
+                logs = logger.get_logs_by_account(account_filter)
             else:
-                print("Invalid choice.")
+                logs = logger.get_all_logs()
+            
+            if logs:
+                for log in logs:
+                    print(log)
+            else:
+                print("No transaction logs found.")
                 
         elif choice == '9':
-            # Exit
-            print("Saving system state before exit...")
-            if banking.save_to_storage():
-                print("System state saved successfully.")
-            else:
-                print("Warning: Failed to save system state.")
-            print("Thank you for using Simple Banking System. Goodbye!")
-            sys.exit(0)
+            # Save before exiting
+            banking.save_to_storage()
+            print("System state saved. Exiting...")
+            break
             
         else:
             print("Invalid choice. Please try again.")
-            
-        input("\nPress Enter to continue...")
 
 
 if __name__ == "__main__":

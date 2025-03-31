@@ -50,3 +50,56 @@
 {"action": "save_to_storage", "status": "success", "timestamp": "2025-03-30T22:18:26.543510", "processing_timestamp": "2025-03-30T22:18:26.543538", "log_level": "INFO"}
 {"action": "save_to_storage", "status": "success", "timestamp": "2025-03-30T22:34:55.716275", "processing_timestamp": "2025-03-30T22:34:55.716327", "log_level": "INFO"}
 {"action": "save_to_storage", "status": "success", "timestamp": "2025-03-30T22:41:17.954963", "processing_timestamp": "2025-03-30T22:41:17.954985", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-30T23:09:19.596022", "processing_timestamp": "2025-03-30T23:09:19.596160", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0004", "name": "jim", "initial_balance": "1000", "status": "success", "timestamp": "2025-03-31T15:37:16.125440", "processing_timestamp": "2025-03-31T15:37:16.125494", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T15:40:43.760544", "processing_timestamp": "2025-03-31T15:40:43.760570", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0001", "name": "Test User 1", "initial_balance": "1000.00", "status": "success", "timestamp": "2025-03-31T15:48:06.019906", "processing_timestamp": "2025-03-31T15:48:06.019911", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0002", "name": "Test User 2", "initial_balance": "500.00", "status": "success", "timestamp": "2025-03-31T15:48:06.020040", "processing_timestamp": "2025-03-31T15:48:06.020043", "log_level": "INFO"}
+{"action": "deposit", "account_id": "ACC0001", "amount": "200.00", "status": "success", "new_balance": "1200.00", "timestamp": "2025-03-31T15:48:06.020185", "processing_timestamp": "2025-03-31T15:48:06.020187", "log_level": "INFO"}
+{"action": "withdraw", "account_id": "ACC0001", "amount": "50.00", "status": "success", "new_balance": "1150.00", "timestamp": "2025-03-31T15:48:06.020292", "processing_timestamp": "2025-03-31T15:48:06.020294", "log_level": "INFO"}
+{"action": "transfer", "from_account_id": "ACC0001", "to_account_id": "ACC0002", "amount": "100.00", "status": "success", "from_account_balance": "1050.00", "to_account_balance": "600.00", "timestamp": "2025-03-31T15:48:06.020454", "processing_timestamp": "2025-03-31T15:48:06.020456", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0005", "name": "jimmy", "initial_balance": "1000", "status": "success", "timestamp": "2025-03-31T16:09:49.543191", "processing_timestamp": "2025-03-31T16:09:49.543291", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T16:09:56.306280", "processing_timestamp": "2025-03-31T16:09:56.306321", "log_level": "INFO"}
+{"action": "transfer", "from_account_id": "ACC0005", "to_account_id": "ACC0004", "amount": "5000", "status": "failed", "reason": "Insufficient funds", "timestamp": "2025-03-31T16:31:31.120569", "processing_timestamp": "2025-03-31T16:31:31.120602", "log_level": "INFO"}
+{"action": "transfer", "from_account_id": "ACC0005", "to_account_id": "ACC0004", "amount": "500", "status": "success", "from_account_balance": "500", "to_account_balance": "1500", "timestamp": "2025-03-31T16:31:48.259057", "processing_timestamp": "2025-03-31T16:31:48.259081", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T16:36:26.320336", "processing_timestamp": "2025-03-31T16:36:26.320378", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0006", "name": "Allen", "initial_balance": "10000", "status": "success", "timestamp": "2025-03-31T16:36:44.289659", "processing_timestamp": "2025-03-31T16:36:44.289818", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T16:36:47.668060", "processing_timestamp": "2025-03-31T16:36:47.668102", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T17:16:01.964837", "processing_timestamp": "2025-03-31T17:16:01.964890", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T17:23:55.820183", "processing_timestamp": "2025-03-31T17:23:55.820228", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T17:24:54.884021", "processing_timestamp": "2025-03-31T17:24:54.884032", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0007", "name": "Iverson ", "initial_balance": "1000", "status": "success", "timestamp": "2025-03-31T17:28:27.803962", "processing_timestamp": "2025-03-31T17:28:27.804014", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T17:28:46.840475", "processing_timestamp": "2025-03-31T17:28:46.840514", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T18:09:18.277130", "processing_timestamp": "2025-03-31T18:09:18.277189", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T18:11:04.568367", "processing_timestamp": "2025-03-31T18:11:04.568441", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T18:11:07.731111", "processing_timestamp": "2025-03-31T18:11:07.731152", "log_level": "INFO"}
+{"action": "load_from_storage", "status": "success", "timestamp": "2025-03-31T18:11:13.867876", "processing_timestamp": "2025-03-31T18:11:13.867936", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T18:11:20.461890", "processing_timestamp": "2025-03-31T18:11:20.461945", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T18:11:31.138321", "processing_timestamp": "2025-03-31T18:11:31.138362", "log_level": "INFO"}
+{"action": "load_from_storage", "status": "success", "timestamp": "2025-03-31T18:11:39.004617", "processing_timestamp": "2025-03-31T18:11:39.004640", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T18:12:42.990421", "processing_timestamp": "2025-03-31T18:12:42.990450", "log_level": "INFO"}
+{"action": "transfer", "from_account_id": "ACC0005", "to_account_id": "ACC0004", "amount": "500", "status": "success", "from_account_balance": "0", "to_account_balance": "2000", "timestamp": "2025-03-31T18:33:33.717548", "processing_timestamp": "2025-03-31T18:33:33.717671", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T18:33:43.315819", "processing_timestamp": "2025-03-31T18:33:43.315848", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T18:33:55.818935", "processing_timestamp": "2025-03-31T18:33:55.818981", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T18:38:35.708781", "processing_timestamp": "2025-03-31T18:38:35.708843", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T21:20:19.530129", "processing_timestamp": "2025-03-31T21:20:19.530162", "log_level": "INFO"}
+{"type": "create_account", "timestamp": "2025-03-31T22:23:42.422247", "account_id": "ACC041BEB16", "name": "jimmy", "initial_balance": "1000", "processing_timestamp": "2025-03-31T22:23:42.422320", "log_level": "INFO"}
+{"type": "create_account", "timestamp": "2025-03-31T22:24:21.957591", "account_id": "ACC46313465", "name": "jamie", "initial_balance": "5000", "processing_timestamp": "2025-03-31T22:24:21.957637", "log_level": "INFO"}
+{"type": "create_account", "timestamp": "2025-03-31T22:24:39.322463", "account_id": "ACC35CB955F", "name": "john", "initial_balance": "10000", "processing_timestamp": "2025-03-31T22:24:39.322531", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0009", "name": "james", "initial_balance": "100", "status": "success", "timestamp": "2025-03-31T22:47:18.962105", "processing_timestamp": "2025-03-31T22:47:18.962211", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T22:47:39.163406", "processing_timestamp": "2025-03-31T22:47:39.163437", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0010", "name": "jenny", "initial_balance": "2000", "status": "success", "timestamp": "2025-03-31T23:28:34.546202", "processing_timestamp": "2025-03-31T23:28:34.546263", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T23:28:50.586532", "processing_timestamp": "2025-03-31T23:28:50.586570", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T23:34:11.413715", "processing_timestamp": "2025-03-31T23:34:11.413780", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T23:35:39.673557", "processing_timestamp": "2025-03-31T23:35:39.673600", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T23:36:40.397913", "processing_timestamp": "2025-03-31T23:36:40.397948", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T23:37:09.396580", "processing_timestamp": "2025-03-31T23:37:09.396597", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T23:37:34.603065", "processing_timestamp": "2025-03-31T23:37:34.603115", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T23:37:46.525095", "processing_timestamp": "2025-03-31T23:37:46.525148", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0001", "name": "jimmy", "initial_balance": "1000", "status": "success", "timestamp": "2025-03-31T23:38:23.173349", "processing_timestamp": "2025-03-31T23:38:23.173430", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T23:38:32.098610", "processing_timestamp": "2025-03-31T23:38:32.098631", "log_level": "INFO"}
+{"action": "create_account", "account_id": "ACC0002", "name": "jamie", "initial_balance": "2000", "status": "success", "timestamp": "2025-03-31T23:38:51.323330", "processing_timestamp": "2025-03-31T23:38:51.323398", "log_level": "INFO"}
+{"action": "deposit", "account_id": "ACC0002", "amount": "1000", "status": "success", "new_balance": "3000", "timestamp": "2025-03-31T23:39:06.849092", "processing_timestamp": "2025-03-31T23:39:06.849132", "log_level": "INFO"}
+{"action": "withdraw", "account_id": "ACC0002", "amount": "500", "status": "success", "new_balance": "2500", "timestamp": "2025-03-31T23:39:18.659191", "processing_timestamp": "2025-03-31T23:39:18.659210", "log_level": "INFO"}
+{"action": "transfer", "from_account_id": "ACC0002", "to_account_id": "ACC0001", "amount": "1500", "status": "success", "from_account_balance": "1000", "to_account_balance": "2500", "timestamp": "2025-03-31T23:39:35.898632", "processing_timestamp": "2025-03-31T23:39:35.898666", "log_level": "INFO"}
+{"action": "save_to_storage", "status": "success", "timestamp": "2025-03-31T23:39:51.080458", "processing_timestamp": "2025-03-31T23:39:51.080491", "log_level": "INFO"}

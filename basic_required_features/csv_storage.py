@@ -1,43 +1,19 @@
-"""
-CSV Storage for the Simple Banking System.
-
-This module provides CSV-based persistence for bank accounts.
-"""
-import os
 import csv
+import os
 from decimal import Decimal
 from typing import Dict, Optional
 
-from .storage_interface import IStorage
+from .i_storage import IStorage
 from .account import BankAccount
 
 
 class CSVStorage(IStorage):
-    """
-    Provides CSV-based persistence for bank accounts.
-    """
     
-    def __init__(self, filepath: str = "accounts.csv"):
-        """
-        Initialize the CSV storage.
-        
-        Args:
-            filepath (str): Path to the CSV file
-        """
+    def __init__(self, filepath: str = "data/accounts.csv"):
         self.filepath = filepath
         self.next_account_id = 1
     
     def save_accounts(self, accounts: Dict[str, BankAccount], next_account_id: int = None) -> bool:
-        """
-        Save accounts to a CSV file.
-        
-        Args:
-            accounts (Dict[str, BankAccount]): Dictionary of account_id -> BankAccount
-            next_account_id (int, optional): Next account ID for the system
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
         try:
             # Create directory if it doesn't exist
             directory = os.path.dirname(self.filepath)
@@ -68,15 +44,6 @@ class CSVStorage(IStorage):
             return False
     
     def load_accounts(self) -> Dict[str, BankAccount]:
-        """
-        Load accounts from a CSV file.
-        
-        Returns:
-            Dict[str, BankAccount]: Dictionary of account_id -> BankAccount
-            
-        Note:
-            Also updates self.next_account_id based on the file content
-        """
         accounts = {}
         
         try:
@@ -111,35 +78,14 @@ class CSVStorage(IStorage):
         return accounts
     
     def get_account(self, account_id: str) -> Optional[BankAccount]:
-        """
-        Get a specific account from the CSV file.
-        
-        Args:
-            account_id (str): ID of the account to retrieve
-            
-        Returns:
-            Optional[BankAccount]: The account if found, None otherwise
-        """
         # For CSV, we need to load all accounts and find the one we want
         accounts = self.load_accounts()
         return accounts.get(account_id)
     
     def get_next_account_id(self) -> int:
-        """
-        Get the next account ID from the CSV file.
-        
-        Returns:
-            int: Next account ID
-        """
         # Load accounts to update next_account_id
         self.load_accounts()
         return self.next_account_id
     
     def close(self) -> None:
-        """
-        Close the storage connection.
-        
-        Note:
-            No-op for CSV storage as there's no persistent connection.
-        """
         pass

@@ -1,198 +1,216 @@
 # Simple Banking System
 
-A Python-based banking system that allows users to manage accounts, perform transactions, and persist data.
-
-## Project Overview
-
-This project implements a banking system with both basic required features and advanced features (additional enhancements). The system follows the KISS (Keep It Simple, Stupid) principle while demonstrating good software design practices.
-
-## Design Approach
-
-The project uses the **Package-by-Feature** design pattern to clearly separate basic requirements from additional features:
-
-```
-SimpleBanking/
-├── README.md                           # Project documentation
-├── requirements.txt                    # Dependencies
-├── main.py                             # Entry point
-├── advanced_features/                  # Additional features module
-│   ├── __init__.py
-│   ├── security.py                     # Security features
-│   ├── analytics.py                    # User analytics
-│   ├── logging/                        # Transaction logging package
-│   │   ├── __init__.py
-│   │   ├── transaction_logger.py       # TransactionLogger implementation
-│   │   └── architecture/               # Enterprise logging architecture
-│   │       ├── __init__.py
-│   │       ├── interfaces.py           # Core interfaces
-│   │       ├── simple_implementation.py # Concrete implementations
-│   │       ├── facade.py               # Simplified interface
-│   │       └── enterprise_placeholders.py # Future enterprise interfaces
-│   └── storage/                        # Alternative storage
-│       ├── __init__.py
-│       ├── json_storage.py             # JSON persistence
-│       └── sql_storage.py              # SQL persistence
-├── basic_required_features/            # Basic required features module
-│   ├── __init__.py
-│   ├── account.py                      # BankAccount class
-│   ├── banking_system.py               # Core banking system
-│   └── persistence.py                  # CSV storage
-├── logs/                               # Log files directory
-└── tests/                              # Test suite
-    ├── __init__.py
-    ├── advanced_features/              # Tests for additional features
-    │   ├── __init__.py
-    │   ├── test_transaction_logging.py # Tests for transaction logging
-    │   ├── test_logging_architecture.py # Tests for logging architecture
-    │   └── test_advanced_features.py
-    └── basic_required_features/        # Tests for required features
-        ├── __init__.py
-        └── test_basic_required_features.py
-```
-
-This design pattern was chosen because:
-- It makes the separation between required and additional features immediately obvious
-- It follows the KISS principle with a straightforward organization
-- It allows for independent development and testing of features
-- It provides clear boundaries between different parts of the system
-
-## Features
-
-### Basic Required Features
-
-1. Users can create a new bank account with a name and starting balance
-2. Users can deposit money to their accounts
-3. Users can withdraw money from their accounts
-4. Users are not allowed to overdraft their accounts
-5. Users can transfer money to other accounts in the same banking system
-6. Save and load system state to CSV
-
-### Advanced Features (Additional)
-
-1. **Multi-user Support**
-   - Support for multiple users with different access levels
-   - Account ownership and permissions
-
-2. **Enhanced Storage Options**
-   - Alternative storage formats (JSON, SQL)
-   - Data migration between storage formats
-
-3. **Security Features**
-   - Transaction logging for audit purposes
-   - Security validation for sensitive operations
-
-4. **Analytics**
-   - Account usage statistics
-   - Transaction history and reporting
-
-## Implementation Status
-
-### Completed Features
-
-#### Basic Required Features
-All basic required features have been implemented and tested:
-
-- Create bank accounts with name and starting balance
-- Deposit money to accounts with validation
-- Withdraw money with overdraft protection
-- Transfer money between accounts
-- CSV persistence for system state
-
-#### Advanced Features
-The following advanced features have been implemented:
-
-- **Transaction Logging** - Comprehensive logging system for all banking operations
-  - Logs all transactions with timestamps
-  - Records success/failure status and failure reasons
-  - Provides filtering by account and action type
-  - Accessible through the command-line interface
-
-### Next Steps
-
-- Implement remaining advanced features
-- Enhance the command-line interface
-- Add more comprehensive documentation
-
-## Implementation Details
-
-### Core Components
-
-- **BankAccount**: Represents an individual bank account with balance and operations
-- **BankingSystem**: Manages accounts and provides system-wide operations
-
-### Design Patterns Used
-
-- **Package-by-Feature**: Main organizational pattern for project structure
-- **Observer Pattern**: For transaction logging (attaching loggers to the banking system)
-
-## Development Approach
-
-This project follows Test-Driven Development (TDD):
-
-1. Write tests that define the expected behavior
-2. Implement the minimum code necessary to pass the tests
-3. Refactor the code while maintaining test coverage
+A Python-based banking system for managing accounts and transactions.
 
 ## Features
 
 ### Basic Features
-- Account creation and management
-- Deposits and withdrawals
-- Fund transfers between accounts
-- Balance inquiries
-- Data persistence using CSV files
+1. Create bank accounts with a name and starting balance
+2. Deposit money to accounts
+3. Withdraw money from accounts
+4. Prevent overdrafting accounts
+5. Transfer money between accounts in the same banking system
+6. Save and load system state to CSV
 
 ### Advanced Features
-- [Transaction Logging](docs/transaction_logging.md) - Comprehensive audit trails for all banking operations
-- [Database Storage](docs/database_storage.md) - SQLite implementation for account data
-- Security features (planned)
-- Analytics capabilities (planned)
+- **[Transaction Management](docs/transaction_atomicity.md)**: Ensures atomicity and thread safety
+- **[Transaction Logging](docs/logging_scalability.md)**: Logs all banking operations
+- **[Database Storage](docs/database_storage.md)**: Optional SQLite storage (`-DStorage sqlite`)
 
-## Database Storage
-
-The system now supports SQLite database storage for account information. For detailed documentation, see [Database Storage](docs/database_storage.md).
-
-## Getting Started
+## Usage
 
 ### Prerequisites
-
 - Python 3.6 or higher
+- No external dependencies required for basic functionality
+- SQLite3 (included in Python standard library) for database storage
 
 ### Installation
-
-1. Clone the repository
+1. Clone the repository:
    ```
    git clone https://github.com/yourusername/SimpleBanking.git
    cd SimpleBanking
    ```
 
-2. Set up a virtual environment (optional but recommended)
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies
-   ```
-   pip install -r requirements.txt
-   ```
+2. No additional installation steps required - the system uses only Python standard libraries.
 
 ### Running the Application
 
+#### Basic Usage with CSV Storage (Default)
 ```
 python main.py
 ```
 
+#### Using SQLite Storage
+```
+python main.py -DStorage sqlite -DStoragePath data/banking.db
+```
+
+### Using Docker
+
+#### Prerequisites
+- Docker installed on your system ([Get Docker](https://docs.docker.com/get-docker/))
+
+#### Building the Docker Image
+1. Navigate to the SimpleBanking directory (where the Dockerfile is located):
+   ```
+   cd /path/to/SimpleBanking
+   ```
+
+2. Build the Docker image:
+   ```
+   docker build -t simple-banking .
+   ```
+
+#### Running with Docker
+All commands below should be run from the SimpleBanking directory:
+
+1. Run with default CSV storage (Data will be lost when container is removed):
+   ```
+   docker run -it --name banking-app simple-banking
+   ```
+
+2. Run with SQLite storage (Data will be lost when container is removed):
+   ```
+   docker run -it --name banking-app simple-banking -DStorage sqlite
+   ```
+
+3. Run with persistent data storage (✅ RECOMMENDED):
+   ```
+   docker run -it -v $(pwd)/data:/app/data --name banking-app simple-banking
+   ```
+
+4. Run with both persistent data and specific storage type (RECOMMENDED):
+   ```
+   docker run -it -v $(pwd)/data:/app/data --name banking-app simple-banking -DStorage sqlite -DStoragePath data/banking.db
+   ```
+
+#### Important: Saving Your Data
+
+When using Docker, follow these steps to ensure your data is saved:
+
+1. **Always use volume mounting** (`-v $(pwd)/data:/app/data`) to persist your data
+2. **Save system state before exiting** by selecting option 6 (Save system state) or option 9 (Exit) from the menu
+3. **Use the same container name** when restarting to maintain your container state:
+   ```
+   docker start -i banking-app
+   ```
+
+If you don't follow these steps, your account data will be lost when the container stops!
+
+#### Managing Docker Containers
+
+1. Stop the container:
+   ```
+   docker stop banking-app
+   ```
+
+2. Restart an existing container (preserves container state):
+   ```
+   docker start -i banking-app
+   ```
+
+3. Remove the container (This will delete container state):
+   ```
+   docker rm banking-app
+   ```
+
+### Command-Line Options
+- `-DStorage`: Storage type to use (`csv` or `sqlite`). Default is `csv`.
+- `-DStoragePath`: Path to the storage file. If not provided, defaults to:
+  - `data/banking_data.csv` for CSV storage
+  - `data/banking.db` for SQLite storage
+
+### Interactive Menu
+Once running, the application presents an interactive menu:
+1. Create a new account
+2. Deposit money
+3. Withdraw money
+4. Transfer money
+5. View account details
+6. Save system state
+7. Load system state
+8. View transaction logs
+9. Exit
+
+Enter the number corresponding to the desired action and follow the prompts.
+
+## Testing
+
+The SimpleBanking system includes a comprehensive test suite to ensure all functionality works correctly.
+
+### Prerequisites
+- Python 3.6 or higher
+- pytest (included in requirements.txt)
+
+### Installing Test Dependencies
+```
+pip install -r requirements.txt
+```
+
 ### Running Tests
 
+#### Run All Tests
 ```
-python -m unittest discover tests
+python -m pytest
 ```
 
-## Contributing
+#### Run Tests with Verbose Output
+```
+python -m pytest -v
+```
 
-This is a demonstration project. Feel free to fork and extend it with your own features!
+#### Run Specific Test Modules
+```
+# Run basic features tests
+python -m pytest tests/basic_required_features/
 
-## License
+# Run advanced features tests
+python -m pytest tests/advanced_features/
+```
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+#### Run Specific Test Cases
+```
+# Run data quality tests
+python -m pytest tests/basic_required_features/test_data_quality.py
+
+# Run specific test method
+python -m pytest tests/basic_required_features/test_data_quality.py::TestDataQuality::test_data_validation
+```
+
+#### Run Tests with Coverage Report
+```
+python -m pytest --cov=basic_required_features --cov=advanced_features
+```
+
+### Test Structure
+- `tests/basic_required_features/`: Tests for core banking functionality
+- `tests/advanced_features/`: Tests for enhanced features like transaction management and storage
+
+## Project Structure
+
+The project follows a modular architecture organized by functional domains:
+- `basic_required_features/`: Core banking functionality
+- `advanced_features/`: Enhanced functionality modules
+- `facade/`: Simplified interface layer
+- `tests/`: Comprehensive test suite
+- `docs/`: Detailed documentation
+
+## Documentation
+
+The `docs/` directory contains detailed documentation on various aspects of the system:
+
+- **[Transaction Atomicity](docs/transaction_atomicity.md)**: How the system ensures operations complete fully or not at all
+- **[Logging Scalability](docs/logging_scalability.md)**: How the logging system scales for big data applications
+- **[Database Storage](docs/database_storage.md)**: Details on the SQLite storage implementation
+
+## Future Work
+
+The following enhancements are planned for future development:
+
+1. **User Authentication**: Implement secure login and user management
+2. **Web Interface**: Develop a web-based frontend using Flask or Django
+3. **Mobile App**: Develop mobile applications for iOS and Android
+4. **API Service**: Create a RESTful API for third-party integrations
+5. **Distributed Storage**: Support for distributed database systems
+6. **Notifications**: Email and SMS alerts for account activities
+7. **Backup and Recovery**: Advanced data backup and disaster recovery features

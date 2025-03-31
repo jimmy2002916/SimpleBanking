@@ -1,75 +1,45 @@
-"""
-Banking System module for the Simple Banking System.
-
-This module defines the BankingSystem class which manages bank accounts
-and provides operations like creating accounts, deposits, withdrawals, and transfers.
-"""
 from decimal import Decimal
 import csv
 import os
 from typing import Optional, Dict, Any, Union
 
 from .account import BankAccount
-from .storage_interface import IStorage
+from .i_storage import IStorage
 from .csv_storage import CSVStorage
+from advanced_features.transaction_management import TransactionManager
 
 class BankingSystem:
-    """
-    Manages bank accounts and provides system-wide operations.
-    """
+
     def __init__(self, storage: Optional[IStorage] = None):
-        """
-        Initialize a new banking system with an empty accounts dictionary.
-        
-        Args:
-            storage (Optional[IStorage]): Storage implementation to use
-                                         (defaults to CSV storage if None)
-        """
         self.accounts = {}
         self.next_account_id = 1
         self.logger = None
         
-        # Set up storage
         self.storage = storage if storage is not None else CSVStorage()
         
-        # Try to load existing accounts
+        self.transaction_manager = TransactionManager()
+        
         self._load_from_storage()
     
     def attach_logger(self, logger):
-        """
-        Attach a transaction logger to the banking system.
-        
-        Args:
-            logger: A transaction logger object
-        """
         self.logger = logger
     
-    def create_account(self, name, initial_balance=Decimal("0.00")):
-        """
-        Create a new bank account.
-        
-        Args:
-            name (str): Name of the account holder
-            initial_balance (Decimal): Initial balance for the account
+    def create_account(self, name, initial_balance=Decimal("0.00"), validate_only=False):
+        if not name or name.strip() == "":
+            if validate_only:
+                raise ValueError("Account holder name cannot be empty")
+            return None
             
-        Returns:
-            str: The account ID of the newly created account
-            
-        Raises:
-            ValueError: If initial_balance is negative
-        """
-        # Validate initial balance
         if initial_balance < Decimal("0.00"):
-            raise ValueError("Initial balance cannot be negative")
+            if validate_only:
+                raise ValueError("Initial balance cannot be negative")
+            return None
         
-        # Generate a unique account ID
         account_id = f"ACC{self.next_account_id:04d}"
         self.next_account_id += 1
         
-        # Create and store the account
         self.accounts[account_id] = BankAccount(account_id, name, initial_balance)
         
-        # Log the account creation if logger is attached
         if self.logger:
             self.logger.log_transaction({
                 "action": "create_account",
@@ -82,139 +52,178 @@ class BankingSystem:
         return account_id
     
     def get_account(self, account_id):
-        """
-        Get an account by its ID.
-        
-        Args:
-            account_id (str): The ID of the account to retrieve
-            
-        Returns:
-            BankAccount: The account if found, None otherwise
-        """
         return self.accounts.get(account_id)
     
-    def deposit(self, account_id, amount):
-        """
-        Deposit money into an account.
-        
-        Args:
-            account_id (str): ID of the account
-            amount (Decimal): Amount to deposit
-            
-        Returns:
-            bool: True if deposit was successful, False otherwise
-        """
-        account = self.get_account(account_id)
-        if not account:
-            # Log failed deposit if logger is attached
+    def deposit(self, account_id, amount, validate_only=False):
+        # Validate amount before acquiring any locks
+        if amount < Decimal("0.00"):
             if self.logger:
-                self.logger.log_deposit(account_id, amount, "failed", "Account not found")
+                self.logger.log_deposit(account_id, amount, "failed", reason="Negative amount")
+            if validate_only:
+                raise ValueError("Deposit amount cannot be negative")
             return False
-        
-        result = account.deposit(amount)
-        
-        # Log the deposit if logger is attached
-        if self.logger:
-            if result:
-                self.logger.log_deposit(account_id, amount, "success")
-            else:
-                self.logger.log_deposit(account_id, amount, "failed", "Invalid amount")
-        
-        return result
+            
+        if amount == Decimal("0.00"):
+            if self.logger:
+                self.logger.log_deposit(account_id, amount, "failed", reason="Zero amount")
+            if validate_only:
+                raise ValueError("Deposit amount cannot be zero")
+            return False
+            
+        # Check if account exists before attempting transaction
+        if account_id not in self.accounts:
+            if self.logger:
+                self.logger.log_deposit(account_id, amount, "failed", reason="Account not found")
+            if validate_only:
+                raise ValueError(f"Account {account_id} not found")
+            return False
+            
+        def deposit_operation(transaction_accounts):
+            account = transaction_accounts[account_id]
+            result = account.deposit(amount)
+            return result
+            
+        try:
+            result = self.transaction_manager.execute_atomic(
+                [account_id], 
+                self.accounts,
+                deposit_operation
+            )
+            
+            if self.logger:
+                if result:
+                    # Get the updated balance
+                    current_balance = self.accounts[account_id].balance
+                    self.logger.log_deposit(account_id, amount, "success", balance=current_balance)
+                else:
+                    self.logger.log_deposit(account_id, amount, "failed", reason="Operation failed")
+            
+            return result
+        except Exception as e:
+            if self.logger:
+                self.logger.log_deposit(account_id, amount, "failed", reason=str(e))
+            return False
     
-    def withdraw(self, account_id, amount):
-        """
-        Withdraw money from an account.
-        
-        Args:
-            account_id (str): ID of the account
-            amount (Decimal): Amount to withdraw
+    def withdraw(self, account_id, amount, validate_only=False):
+        if amount < Decimal("0.00"):
+            if self.logger:
+                self.logger.log_withdraw(account_id, amount, "failed", reason="Negative amount")
+            if validate_only:
+                raise ValueError("Withdrawal amount cannot be negative")
+            return False
             
-        Returns:
-            bool: True if withdrawal was successful, False otherwise
-        """
+        if amount == Decimal("0.00"):
+            if self.logger:
+                self.logger.log_withdraw(account_id, amount, "failed", reason="Zero amount")
+            if validate_only:
+                raise ValueError("Withdrawal amount cannot be zero")
+            return False
+            
+        if account_id not in self.accounts:
+            if self.logger:
+                self.logger.log_withdraw(account_id, amount, "failed", reason="Account not found")
+            if validate_only:
+                raise ValueError(f"Account {account_id} not found")
+            return False
+            
         account = self.get_account(account_id)
-        if not account:
-            # Log failed withdrawal if logger is attached
+        if account and amount > account.balance:
             if self.logger:
-                self.logger.log_withdraw(account_id, amount, "failed", "Account not found")
+                self.logger.log_withdraw(account_id, amount, "failed", reason="Insufficient funds")
+            if validate_only:
+                raise ValueError("Insufficient funds for withdrawal")
             return False
         
-        # Check if amount is positive
-        if amount <= Decimal("0.00"):
+        def withdraw_operation(transaction_accounts):
+            account = transaction_accounts[account_id]
+            # Double-check balance after acquiring lock
+            if amount > account.balance:
+                return False
+            result = account.withdraw(amount)
+            return result
+            
+        try:
+            result = self.transaction_manager.execute_atomic(
+                [account_id], 
+                self.accounts,
+                withdraw_operation
+            )
+            
             if self.logger:
-                self.logger.log_withdraw(account_id, amount, "failed", "Invalid amount")
-            return False
-        
-        # Check if there's enough balance
-        if amount > account.balance:
+                if result:
+                    # Get the updated balance
+                    current_balance = self.accounts[account_id].balance
+                    self.logger.log_withdraw(account_id, amount, "success", balance=current_balance)
+                else:
+                    self.logger.log_withdraw(account_id, amount, "failed", reason="Operation failed")
+            
+            return result
+        except Exception as e:
             if self.logger:
-                self.logger.log_withdraw(account_id, amount, "failed", "Insufficient funds")
+                self.logger.log_withdraw(account_id, amount, "failed", reason=str(e))
             return False
-        
-        result = account.withdraw(amount)
-        
-        # Log the withdrawal if logger is attached
-        if self.logger and result:
-            self.logger.log_withdraw(account_id, amount, "success")
-        
-        return result
     
     def transfer(self, from_account_id, to_account_id, amount):
-        """
-        Transfer money between accounts.
-        
-        Args:
-            from_account_id (str): ID of the source account
-            to_account_id (str): ID of the destination account
-            amount (Decimal): Amount to transfer
-            
-        Returns:
-            bool: True if transfer was successful, False otherwise
-        """
-        # Check if amount is positive
         if amount <= Decimal("0.00"):
             if self.logger:
-                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", "Invalid amount")
+                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", reason="Invalid amount")
             return False
         
-        # Get the accounts
+        if from_account_id not in self.accounts or to_account_id not in self.accounts:
+            if self.logger:
+                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", reason="Account not found")
+            return False
+            
         from_account = self.get_account(from_account_id)
-        to_account = self.get_account(to_account_id)
-        
-        # Check if both accounts exist
-        if not from_account or not to_account:
+        if from_account and from_account.balance < amount:
             if self.logger:
-                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", "Account not found")
+                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", reason="Insufficient funds")
             return False
-        
-        # Check if the source account has enough balance
-        if from_account.balance < amount:
+            
+        def transfer_operation(transaction_accounts):
+            from_account = transaction_accounts[from_account_id]
+            to_account = transaction_accounts[to_account_id]
+            
+            if from_account.balance < amount:
+                return False
+                
+            from_account.balance -= amount
+            to_account.balance += amount
+            return True
+            
+        try:
+            result = self.transaction_manager.execute_atomic(
+                [from_account_id, to_account_id], 
+                self.accounts,
+                transfer_operation
+            )
+            
             if self.logger:
-                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", "Insufficient funds")
+                if result:
+                    # Get the updated balances
+                    from_balance = self.accounts[from_account_id].balance
+                    to_balance = self.accounts[to_account_id].balance
+                    self.logger.log_transfer(
+                        from_account_id, 
+                        to_account_id, 
+                        amount, 
+                        "success",
+                        from_balance=from_balance,
+                        to_balance=to_balance
+                    )
+                else:
+                    self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", reason="Operation failed")
+            
+            return result
+        except Exception as e:
+            if self.logger:
+                self.logger.log_transfer(from_account_id, to_account_id, amount, "failed", reason=str(e))
             return False
-        
-        # Perform the transfer
-        from_account.balance -= amount
-        to_account.balance += amount
-        
-        # Log the transfer if logger is attached
-        if self.logger:
-            self.logger.log_transfer(from_account_id, to_account_id, amount, "success")
-        
-        return True
     
     def save_to_storage(self) -> bool:
-        """
-        Save the banking system state to the configured storage.
-        
-        Returns:
-            bool: True if save was successful, False otherwise
-        """
         try:
             result = self.storage.save_accounts(self.accounts, self.next_account_id)
             
-            # Log the save operation if logger is attached
             if self.logger:
                 self.logger.log_transaction({
                     "action": "save_to_storage",
@@ -223,7 +232,6 @@ class BankingSystem:
             
             return result
         except Exception as e:
-            # Log the failed save operation if logger is attached
             if self.logger:
                 self.logger.log_transaction({
                     "action": "save_to_storage",
@@ -233,13 +241,10 @@ class BankingSystem:
             print(f"Error saving to storage: {e}")
             return False
     
+    def load_from_storage(self) -> bool:
+        return self._load_from_storage()
+    
     def _load_from_storage(self) -> bool:
-        """
-        Load the banking system state from the configured storage.
-        
-        Returns:
-            bool: True if load was successful, False otherwise
-        """
         try:
             # Load accounts from storage
             self.accounts = self.storage.load_accounts()
@@ -248,10 +253,8 @@ class BankingSystem:
             if hasattr(self.storage, 'get_next_account_id'):
                 self.next_account_id = self.storage.get_next_account_id()
             else:
-                # For other storage types, determine next_account_id from accounts
                 self._determine_next_account_id()
             
-            # Log the load operation if logger is attached
             if self.logger:
                 self.logger.log_transaction({
                     "action": "load_from_storage",
@@ -260,7 +263,6 @@ class BankingSystem:
             
             return True
         except Exception as e:
-            # Log the failed load operation if logger is attached
             if self.logger:
                 self.logger.log_transaction({
                     "action": "load_from_storage",
@@ -271,9 +273,6 @@ class BankingSystem:
             return False
     
     def _determine_next_account_id(self) -> None:
-        """
-        Determine the next account ID based on existing accounts.
-        """
         max_id = 0
         for account_id in self.accounts.keys():
             if account_id.startswith("ACC"):
@@ -284,23 +283,11 @@ class BankingSystem:
                     pass
         
         self.next_account_id = max_id + 1
-    
-    # Legacy methods below can be removed as they're now handled by the storage interface
-    # and StorageFactory. Keeping them would create duplicate code paths.
+
     def save_to_csv(self, filepath):
-        """
-        Save the banking system state to a CSV file.
-        
-        Args:
-            filepath (str): Path to the CSV file
-            
-        Returns:
-            bool: True if save was successful, False otherwise
-        """
         csv_storage = CSVStorage(filepath)
         result = csv_storage.save_accounts(self.accounts, self.next_account_id)
         
-        # Log the save operation if logger is attached
         if self.logger:
             self.logger.log_transaction({
                 "action": "save_to_csv",
@@ -310,23 +297,12 @@ class BankingSystem:
         
         return result
     
-    # For backward compatibility
     def load_from_csv(self, filepath):
-        """
-        Load the banking system state from a CSV file.
-        
-        Args:
-            filepath (str): Path to the CSV file
-            
-        Returns:
-            bool: True if load was successful, False otherwise
-        """
         try:
             csv_storage = CSVStorage(filepath)
             self.accounts = csv_storage.load_accounts()
             self.next_account_id = csv_storage.get_next_account_id()
             
-            # Log the load operation if logger is attached
             if self.logger:
                 self.logger.log_transaction({
                     "action": "load_from_csv",
@@ -336,7 +312,6 @@ class BankingSystem:
             
             return True
         except Exception as e:
-            # Log the failed load operation if logger is attached
             if self.logger:
                 self.logger.log_transaction({
                     "action": "load_from_csv",

@@ -1,42 +1,20 @@
-"""
-SQLite Storage for the Simple Banking System.
-
-This module provides SQLite-based persistence for bank accounts.
-"""
 import os
+import sqlite3
 from decimal import Decimal
 from typing import Dict, Any, List, Optional
 
-from .models import DatabaseManager, DecimalEncoder
+from basic_required_features.i_storage import IStorage
 from basic_required_features.account import BankAccount
+from .database_manager import DatabaseManager, DecimalEncoder
 
 
-class SQLiteStorage:
-    """
-    Provides SQLite-based persistence for bank accounts.
-    """
+class SQLiteStorage(IStorage):
     
-    def __init__(self, db_path: str = "banking.db"):
-        """
-        Initialize the SQLite storage.
-        
-        Args:
-            db_path (str): Path to the SQLite database file
-        """
+    def __init__(self, db_path: str = "data/banking.db"):
         self.db_manager = DatabaseManager(db_path)
         self.next_account_id = 1
     
     def save_accounts(self, accounts: Dict[str, BankAccount], next_account_id: int = None) -> bool:
-        """
-        Save accounts to the SQLite database.
-        
-        Args:
-            accounts (Dict[str, BankAccount]): Dictionary of account_id -> BankAccount
-            next_account_id (int, optional): Next account ID for the system
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
         try:
             conn = self.db_manager.get_connection()
             cursor = conn.cursor()
@@ -90,12 +68,6 @@ class SQLiteStorage:
             return False
     
     def load_accounts(self) -> Dict[str, BankAccount]:
-        """
-        Load accounts from the SQLite database.
-        
-        Returns:
-            Dict[str, BankAccount]: Dictionary of account_id -> BankAccount
-        """
         accounts = {}
         
         try:
@@ -128,15 +100,6 @@ class SQLiteStorage:
         return accounts
     
     def get_account(self, account_id: str) -> Optional[BankAccount]:
-        """
-        Get a specific account from the database.
-        
-        Args:
-            account_id (str): ID of the account to retrieve
-            
-        Returns:
-            Optional[BankAccount]: The account if found, None otherwise
-        """
         try:
             rows = self.db_manager.execute_query(
                 "SELECT * FROM accounts WHERE account_id = ?", 
@@ -155,24 +118,9 @@ class SQLiteStorage:
         return None
     
     def get_next_account_id(self) -> int:
-        """
-        Get the next account ID from the database.
-        
-        Returns:
-            int: Next account ID
-        """
         return self.next_account_id
     
     def delete_account(self, account_id: str) -> bool:
-        """
-        Delete an account from the database.
-        
-        Args:
-            account_id (str): ID of the account to delete
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
         try:
             self.db_manager.execute_query(
                 "DELETE FROM accounts WHERE account_id = ?", 
@@ -185,16 +133,6 @@ class SQLiteStorage:
             return False
     
     def query_accounts(self, query_params=None):
-        """
-        Query accounts from the database with optional filtering.
-        
-        Args:
-            query_params (dict, optional): Parameters to filter accounts by
-                Example: {'balance_min': 100.00, 'name': 'Alice'}
-                
-        Returns:
-            List[Dict]: List of account dictionaries with account_id, name, balance
-        """
         try:
             base_query = "SELECT * FROM accounts"
             params = []
@@ -237,19 +175,6 @@ class SQLiteStorage:
             return []
     
     def execute_raw_query(self, query, params=()):
-        """
-        Execute a raw SQL query on the database.
-        
-        Args:
-            query (str): SQL query to execute
-            params (tuple): Parameters for the query
-            
-        Returns:
-            List[Dict]: Query results
-            
-        Warning:
-            This method allows direct access to the database. Use with caution.
-        """
         try:
             return self.db_manager.execute_query(query, params)
         except Exception as e:
@@ -257,7 +182,4 @@ class SQLiteStorage:
             return []
     
     def close(self) -> None:
-        """
-        Close the database connection.
-        """
         self.db_manager.close_connection()

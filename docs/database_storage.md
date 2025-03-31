@@ -1,254 +1,135 @@
-# Database Storage for Simple Banking System
-
-This document provides a comprehensive guide to using SQLite database storage with the Simple Banking System, including step-by-step instructions with examples.
+# Database Storage
 
 ## Overview
+The SimpleBanking system supports multiple storage backends, with CSV as the default and SQLite as an optional enterprise-ready alternative.
 
-The Simple Banking System now supports SQLite database storage for account information, providing better data integrity, query capabilities, and scalability compared to the traditional file-based approach. The system uses CSV storage by default, but you can easily switch to SQLite storage as described below.
+## Storage Options
 
-### Storage Locations
+### CSV Storage (Default)
+CSV storage provides a simple, file-based storage solution that is easy to understand and inspect. Data is stored in `banking_data.csv` by default, or in a custom location if specified:
 
-- **CSV Storage (Default)**: Data is stored in `banking_data.csv` in the current directory by default
-- **SQLite Storage**: Data is stored in `banking.db` in the current directory by default
+### SQLite Storage
+SQLite storage provides better data integrity, concurrency support, and query capabilities. Data is stored in `banking.db` by default, or in a custom location if specified:
 
-Both storage locations can be customized using the `-DStoragePath` parameter.
+## Implementation Details
 
-### Data Loading at Startup
+The storage system is implemented through a clean abstraction layer:
 
-When the banking system starts:
+### Storage Interface
+The `IStorage` interface is defined in `basic_required_features/storage_interface.py` and provides the contract that all storage implementations must follow:
 
-1. It automatically attempts to load existing account data from the storage file (`banking_data.csv` for CSV storage or `banking.db` for SQLite storage)
-2. If the file exists and contains valid data, all accounts will be loaded into the system
-3. If the file doesn't exist or is empty, the system starts with no accounts
-4. You don't need to explicitly load the data - this happens automatically during initialization
+```python
+from abc import ABC, abstractmethod
+from typing import Dict
+from .account import BankAccount
 
-### Automatic Saving on Exit
-
-The system now automatically saves the state before exiting:
-
-1. When you select option `9` (Exit) from the main menu, the system will automatically save all account data
-2. The data will be saved to the appropriate storage format based on your startup configuration:
-   - CSV storage: Saves to `banking_data.csv` (or your custom path)
-   - SQLite storage: Saves to `banking.db` (or your custom path)
-3. You'll see a confirmation message that the system state was saved before the program exits
-
-You can still manually save the system state at any time using option `6` from the main menu.
-
-## Step-by-Step Guide with Examples
-
-### 1. Starting the Banking System with SQLite Storage
-
-By default, the system uses CSV storage. To use SQLite storage instead, start the banking system with the appropriate command-line arguments:
-
-```bash
-python main.py -DStorage sqlite -DStoragePath banking.db
+class IStorage(ABC):
+    """Interface for storage implementations."""
+    
+    @abstractmethod
+    def save_accounts(self, accounts: Dict[str, BankAccount]) -> bool:
+        """Save accounts to storage."""
+        pass
+    
+    @abstractmethod
+    def load_accounts(self) -> Dict[str, BankAccount]:
+        """Load accounts from storage."""
+        pass
 ```
 
-Example output:
-```
-Using SQLITE storage at: banking.db
-Transaction logging enabled. Logs will be saved to: logs/transactions.log
+This interface ensures that all storage implementations provide consistent save and load functionality, allowing the banking system to work with any storage backend without changing its code.
 
-===== Simple Banking System =====
-1. Create a new account
-2. Deposit money
-3. Withdraw money
-4. Transfer money
-5. View account details
-6. Save system state
-7. Load system state
-8. View transaction logs
-9. Exit
-================================
-Enter your choice (1-9):
-```
+### Storage Factory
+The `StorageFactory` class is defined in `advanced_features/storage/storage_factory.py` and provides a factory method for creating storage implementations:
 
-### 2. Creating a User Account
+```python
+from basic_required_features.storage_interface import IStorage
+from basic_required_features.csv_storage import CSVStorage
+from .database.sqlite_storage import SQLiteStorage
 
-To create a new account:
-
-1. Select option `1` from the main menu
-2. Enter the account holder's name
-3. Enter the initial balance
-
-Example:
-```
-Enter your choice (1-9): 1
-Enter account holder name: Alice
-Enter initial balance: 1000
-Account created successfully! Account ID: ACC0001
-
-Press Enter to continue...
+class StorageFactory:
+    """Factory for creating storage implementations."""
+    
+    @staticmethod
+    def create_storage(storage_type: str, **kwargs) -> IStorage:
+        """Create a storage implementation."""
+        if storage_type == "csv":
+            filepath = kwargs.get("filepath", "banking_data.csv")
+            return CSVStorage(filepath)
+        elif storage_type == "sqlite":
+            db_path = kwargs.get("db_path", "banking.db")
+            return SQLiteStorage(db_path)
+        else:
+            raise ValueError(f"Unknown storage type: {storage_type}")
 ```
 
-### 3. Performing Transactions
+This factory pattern makes it easy to create different storage implementations based on configuration, allowing the system to switch between storage backends at runtime.
 
-You can perform various transactions:
+### Storage Implementations
 
-#### Deposit Money
-```
-Enter your choice (1-9): 2
-Enter account ID: ACC0001
-Enter amount to deposit: 500
-Deposit successful!
-New balance: 1500.00
-```
+1. **CSVStorage** (`basic_required_features/csv_storage.py`):
+   - Simple file-based storage using CSV format
+   - Stores account data in a human-readable format
+   - Suitable for small-scale deployments and development
 
-#### Withdraw Money
-```
-Enter your choice (1-9): 3
-Enter account ID: ACC0001
-Enter amount to withdraw: 200
-Withdrawal successful!
-New balance: 1300.00
-```
+2. **SQLiteStorage** (`advanced_features/storage/database/sqlite_storage.py`):
+   - Database storage using SQLite
+   - Provides better data integrity and query capabilities
+   - Suitable for production deployments and larger datasets
 
-#### Transfer Money
-```
-Enter your choice (1-9): 4
-Enter source account ID: ACC0001
-Enter destination account ID: ACC0002
-Enter amount to transfer: 300
-Transfer successful!
-Source account balance: 1000.00
-Destination account balance: 800.00
-```
+## Automatic Saving
+The system automatically saves the state before exiting, ensuring that no data is lost. You can also manually save at any time using option 6 from the main menu.
+## Accessing the SQLite Database
 
-### 4. CRITICAL: Saving Data to SQLite
+To run SQL queries on the SQLite database:
+1. Use the SQLite command-line tool to access the database:
+   ```
+   # Install SQLite if not already installed
+   # macOS: brew install sqlite
+   # Ubuntu: sudo apt install sqlite3
+   
+   # Open the database
+   sqlite3 data/banking.db
+   ```
 
-**This step is essential!** You must explicitly save the system state before exiting:
+2. Inside the SQLite shell, you can run queries:
+   ```sql
+   -- Show tables in the database
+   .tables
+   
+   -- Show schema for accounts table
+   .schema accounts
+   
+   -- Run queries on the data
+   SELECT * FROM accounts;
+   ```
 
-1. Select option `6` from the main menu
-2. Wait for confirmation that the state was saved
+3. Useful SQLite shell commands:
+   ```
+   .help     - Show help
+   .tables   - List tables
+   .schema   - Show schema
+   .mode column  - Format output as columns
+   .headers on   - Show column headers
+   .quit     - Exit SQLite shell
+   ```
+## Example SQLite Queries
+For advanced users who want to query the SQLite database directly:
 
-Example:
-```
-Enter your choice (1-9): 6
-Saving system state...
-System state saved successfully
-
-Press Enter to continue...
-```
-
-If you don't perform this step, your changes will NOT be saved to the database!
-
-### 5. Querying the SQLite Database
-
-After saving your data, you can query the SQLite database directly:
-
-#### Opening the SQLite Shell
-```bash
-sqlite3 banking.db
-```
-
-Output:
-```
-SQLite version 3.36.0 2021-06-18 18:36:39
-Enter ".help" for usage hints.
-sqlite>
-```
-
-#### Viewing All Tables
 ```sql
-.tables
-```
-
-Output:
-```
-accounts         system_metadata
-```
-
-#### Viewing All Accounts
-```sql
+-- List all accounts
 SELECT * FROM accounts;
-```
 
-Example output:
-```
-ACC0001|Alice|1000.00|2025-03-30 09:30:21
-ACC0002|Bob|800.00|2025-03-30 09:31:15
-```
+-- Get total balance across all accounts
+SELECT SUM(balance) FROM accounts;
 
-#### Viewing Account Details
-```sql
-SELECT * FROM accounts WHERE account_id = 'ACC0001';
-```
-
-Example output:
-```
-ACC0001|Alice|1000.00|2025-03-30 09:30:21
-```
-
-#### Filtering Accounts by Balance
-```sql
-SELECT * FROM accounts WHERE CAST(balance AS REAL) > 500;
-```
-
-Example output:
-```
-ACC0001|Alice|1000.00|2025-03-30 09:30:21
-ACC0002|Bob|800.00|2025-03-30 09:31:15
-```
-
-#### Viewing System Metadata
-```sql
-SELECT * FROM system_metadata;
-```
-
-Example output:
-```
-next_account_id|3
-```
-
-#### Exiting the SQLite Shell
-```
-.exit
+-- Find accounts with balance over 1000
+SELECT * FROM accounts WHERE balance > 1000;
 ```
 
 ## Troubleshooting
 
-### No Data in Database After Creating Accounts
-
-If you don't see your accounts in the database:
-
-1. **Did you save the system state?** Always select option `6` before exiting.
-2. **Check the database path** - Make sure you're querying the correct database file.
-3. **Verify SQLite storage was selected** - Confirm you started with `-DStorage sqlite`.
-
-### Example Debugging Session
-
-```bash
-# Check if the database file exists
-ls -la banking.db
-
-# Check the number of accounts in the database
-sqlite3 banking.db "SELECT COUNT(*) FROM accounts;"
-
-# If count is 0, you likely didn't save the system state
-```
-
-## Implementation Details
-
-### Storage Architecture
-
-The storage system uses the following components:
-
-1. **IStorage Interface**: Defines the contract for all storage implementations
-2. **CSVStorage**: Implements file-based storage using CSV format
-3. **SQLiteStorage**: Implements database storage using SQLite
-4. **StorageFactory**: Creates appropriate storage instances based on configuration
-5. **DatabaseManager**: Handles SQLite database connections and operations
-
-### Database Schema
-
-The SQLite database includes the following tables:
-
-1. **accounts**: Stores account information
-   - account_id (TEXT): Primary key
-   - name (TEXT): Account holder's name
-   - balance (TEXT): Account balance stored as string
-   - created_at (TIMESTAMP): Account creation timestamp
-
-2. **system_metadata**: Stores system-level information
-   - key (TEXT): Metadata key (e.g., "next_account_id")
-   - value (TEXT): Metadata value
+If you encounter issues with database storage:
+1. Verify the database file exists and is not corrupted
+2. Check file permissions
+3. Ensure SQLite is properly installed if using SQLite storage
