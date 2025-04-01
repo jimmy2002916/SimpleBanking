@@ -1,0 +1,6 @@
+2025-04-01 09:23:11,145 - INFO - Setting up test in TestAuditLogging
+2025-04-01 09:23:11,145 - INFO - Created account ACC0001 with balance 1000.00
+2025-04-01 09:23:11,145 - INFO - Created account ACC0002 with balance 500.00
+2025-04-01 09:23:11,145 - INFO - Deposited 200.00 to account ACC0001
+2025-04-01 09:23:11,145 - INFO - Withdrew 100.00 from account ACC0002
+2025-04-01 09:23:11,145 - INFO - Transferred 300.00 from account ACC0001 to account ACC0002

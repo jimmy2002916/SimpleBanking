@@ -1,5 +1,12 @@
 # Transaction Atomicity
 
+## Table of Contents
+- [Overview](#overview)
+- [Implementation](#implementation)
+- [Key Features](#key-features)
+- [Example: Fund Transfer](#example-fund-transfer)
+- [Benefits](#benefits)
+
 ## Overview
 Transaction atomicity ensures operations either complete fully or not at all. This is critical for financial systems to maintain data integrity.
 

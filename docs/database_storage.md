@@ -1,5 +1,19 @@
 # Database Storage
 
+## Table of Contents
+- [Overview](#overview)
+- [Storage Options](#storage-options)
+  - [CSV Storage (Default)](#csv-storage-default)
+  - [SQLite Storage](#sqlite-storage)
+- [Implementation Details](#implementation-details)
+  - [Storage Interface](#storage-interface)
+  - [Storage Factory](#storage-factory)
+  - [Storage Implementations](#storage-implementations)
+- [Automatic Saving](#automatic-saving)
+- [Accessing the SQLite Database](#accessing-the-sqlite-database)
+- [Example SQLite Queries](#example-sqlite-queries)
+- [Troubleshooting](#troubleshooting)
+
 ## Overview
 The SimpleBanking system supports multiple storage backends, with CSV as the default and SQLite as an optional enterprise-ready alternative.
 

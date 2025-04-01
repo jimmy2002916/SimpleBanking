@@ -1,5 +1,13 @@
 # Logging Scalability for Big Data
 
+## Table of Contents
+- [Overview](#overview)
+- [Architecture Components and Files](#architecture-components-and-files)
+- [Dependency Hierarchy](#dependency-hierarchy)
+- [Data Flow](#data-flow)
+- [Enterprise Scaling Path](#enterprise-scaling-path)
+- [Implementation Example](#implementation-example)
+
 ## Overview
 The SimpleBanking system implements a scalable logging architecture designed to handle large volumes of transaction data in enterprise environments. This architecture follows a modular design pattern that decouples log generation from storage and processing, allowing the system to scale from a simple file-based implementation to a distributed enterprise solution.
 
